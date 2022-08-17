@@ -1,6 +1,6 @@
 # YimMenu made possible by [BigBaseV2](https://github.com/Pocakking/BigBaseV2)
 A mod menu base for Grand Theft Auto V.
-Strictly for educational purposes.
+Strictly for educational purposes only.
 
 ## Table of contents
 
@@ -19,6 +19,7 @@ Requirements:
 
  * [git](#git)
  * [premake5](#premake5)
+ * [Visual studio 2022](#vs2022)
 
 If you have both of the above requirements you can skip to [cloning the git repo and generating the project files](#cloning-and-generating-project-files).
 
@@ -33,6 +34,12 @@ If you haven't installed git on your system go and do so it is **REQUIRED** for 
 Premake5 is used to generate our project files, if you haven't used it before we will need to download and add it to our [System Path](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/).
 
 [Download Link](https://premake.github.io/download/)
+
+### Visual studio 2022
+
+Install visual studio so you can compile the source
+
+[Download Link](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&channel=Release&version=VS2022&source=VSLandingPage&cid=2030&passive=false)
 
 ### Cloning and generating project files
 
@@ -91,4 +98,4 @@ Below is an incomplete list of feature that I believe are notable to this "base"
 
 You're free to contribute to YimMenu as long as the feature are useful, non-toxic and do not contain anything money related that might get the menu targetted by Take2.
 
-Make sure to read the [CONTRIBUTING.md](CONTRIBUTING.md) file.
+Make sure to read the [CONTRIBUTING.md](https://github.com/YimMenu/YimMenu/blob/master/CONTRIBUTING.md) file.
