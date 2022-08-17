@@ -18,7 +18,6 @@ namespace big
 		{ eSessionType::SOLO,			"Solo Session" },
 		{ eSessionType::INVITE_ONLY,	"Invite Only Session" },
 		{ eSessionType::JOIN_CREW,		"Join Crew Session" },
-		{ eSessionType::SC_TV,		    "SC TV" },
 		{ eSessionType::LEAVE_ONLINE,	"Leave GTA Online" }
 	};
 }

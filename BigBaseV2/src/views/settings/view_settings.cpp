@@ -7,11 +7,11 @@ namespace big
 	void scripts_popupmodal()
 	{
 		ImGui::BeginGroup();
-		components::sub_title("Scripts");
+		components::small_text("Scripts");
 		ImGui::SameLine(ImGui::GetWindowWidth() - 100);
 		if (ImGui::Button("Close")) ImGui::CloseCurrentPopup();
 		ImGui::Spacing();
-		components::sub_title("These scripts are responsible for all looped features.\nOnly disable if you know what you are doing.");
+		components::small_text("These scripts are responsible for all looped features.\nOnly disable if you know what you are doing.");
 
 		for (const auto& script : g_script_mgr.scripts()) {
 			if (script->is_toggleable())
@@ -24,7 +24,7 @@ namespace big
 
 	void view::settings()
 	{
-		components::sub_title("Hotkeys");
+		components::small_text("Hotkeys");
 
 		ImGui::PushItemWidth(350.f);
 

@@ -10,7 +10,7 @@
 namespace big
 {
 	void view::weapons() {
-		components::sub_title("Ammo");
+		components::small_text("Ammo");
 		ImGui::Checkbox("Infinite Ammo", &g->weapons.infinite_ammo);
 
 		ImGui::SameLine();
@@ -60,7 +60,7 @@ namespace big
 
 		ImGui::Separator();
 
-		components::sub_title("Misc");
+		components::small_text("Misc");
 
 		ImGui::Checkbox("Force Crosshairs", &g->weapons.force_crosshairs);
 
@@ -95,7 +95,7 @@ namespace big
 
 		ImGui::Separator();
 
-		components::sub_title("Custom Weapons");
+		components::small_text("Custom Weapons");
 
 		CustomWeapon selected = g->weapons.custom_weapon;
 
