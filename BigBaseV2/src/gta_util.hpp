@@ -1,10 +1,8 @@
 #pragma once
-#include "common.hpp"
 #include "gta/array.hpp"
-#include "gta/ped_factory.hpp"
-#include "gta/player.hpp"
 #include "gta/script_thread.hpp"
 #include "gta/tls_context.hpp"
+#include "ped/CPedFactory.hpp"
 #include "pointers.hpp"
 
 namespace big::gta_util
@@ -25,11 +23,16 @@ namespace big::gta_util
 		{
 			if (auto ped = ped_factory->m_local_ped)
 			{
-				return ped->m_playerinfo;
+				return ped->m_player_info;
 			}
 		}
 
 		return nullptr;
+	}
+
+	inline CNetworkPlayerMgr* get_network_player_mgr()
+	{
+		return *g_pointers->m_network_player_mgr;
 	}
 
 	template <typename F, typename ...Args>
@@ -53,5 +56,21 @@ namespace big::gta_util
 
 			return;
 		}
+	}
+
+	inline GtaThread* find_script_thread(rage::joaat_t hash)
+	{
+		for (auto thread : *g_pointers->m_script_threads)
+		{
+			if (thread
+				&& thread->m_context.m_thread_id
+				&& thread->m_handler
+				&& thread->m_script_hash == hash)
+			{
+				return thread;
+			}
+		}
+
+		return nullptr;
 	}
 }

@@ -1,188 +1,221 @@
 #pragma once
 #include "common.hpp"
+#include "file_manager.hpp"
+#include <g3log/g3log.hpp>
+#include <g3log/loglevels.hpp>
+#include <g3log/logworker.hpp>
 
 namespace big
 {
-	enum class log_color : std::uint16_t
+	template <typename TP>
+	std::time_t to_time_t(TP tp)
 	{
-		red = FOREGROUND_RED,
-		green = FOREGROUND_GREEN,
-		blue = FOREGROUND_BLUE,
-		intensify = FOREGROUND_INTENSITY
-	};
-
-	inline log_color operator|(log_color a, log_color b)
-	{
-		return static_cast<log_color>(static_cast<std::underlying_type_t<log_color>>(a) | static_cast<std::underlying_type_t<log_color>>(b));
+		using namespace std::chrono;
+		auto sctp = time_point_cast<system_clock::duration>(tp - TP::clock::now()
+			+ system_clock::now());
+		return system_clock::to_time_t(sctp);
 	}
 
 	class logger;
-	inline logger *g_logger{};
+	inline logger* g_log{};
 
-	class logger
+	enum class LogColor
 	{
-	public:
-		explicit logger() :
-			m_file_path(std::getenv("appdata"))
-		{
-			m_file_path /= "BigBaseV2";
-			try
-			{
-				if (!std::filesystem::exists(m_file_path))
-				{
-					std::filesystem::create_directory(m_file_path);
-				}
-				else if (!std::filesystem::is_directory(m_file_path))
-				{
-					std::filesystem::remove(m_file_path);
-					std::filesystem::create_directory(m_file_path);
-				}
-
-				m_file_path /= "BigBaseV2.log";
-				m_file_out.open(m_file_path, std::ios_base::out | std::ios_base::app);
-			}
-			catch (std::filesystem::filesystem_error const&)
-			{
-			}
-
-			if ((m_did_console_exist = AttachConsole(GetCurrentProcessId())) == false)
-				AllocConsole();
-
-			if ((m_console_handle = GetStdHandle(STD_OUTPUT_HANDLE)) != nullptr)
-			{
-				SetConsoleTitleA("BigBaseV2");
-				SetConsoleOutputCP(CP_UTF8);
-			
-				m_console_out.open("CONOUT$", std::ios_base::out | std::ios_base::app);
-			}
-
-			g_logger = this;
-		}
-
-		~logger()
-		{
-			if (!m_did_console_exist)
-				FreeConsole();
-
-			g_logger = nullptr;
-		}
-
-		template <typename ...Args>
-		void raw(log_color color, Args const &...args)
-		{
-			raw_to_console(color, args...);
-			raw_to_file(args...);
-		}
-
-		template <typename ...Args>
-		void log(log_color color, std::string_view prefix, std::string_view format, Args const &...args)
-		{
-			auto message = fmt::format(format, args...);
-		
-			auto time_since_epoch = std::time(nullptr);
-			auto local_time = std::localtime(&time_since_epoch);
-			
-			auto console_timestamp = fmt::format("[{:0>2}:{:0>2}:{:0>2}]", local_time->tm_hour, local_time->tm_min, local_time->tm_sec);
-			auto file_timestamp = fmt::format("[{}-{}-{} {:0>2}:{:0>2}:{:0>2}]", local_time->tm_year + 1900, local_time->tm_mon + 1, local_time->tm_mday, local_time->tm_hour, local_time->tm_min, local_time->tm_sec);
-
-			raw_to_console(color, console_timestamp, " [", prefix, "] ", message, "\n");
-			raw_to_file(file_timestamp, " [", prefix, "] ", message, "\n");
-		}
-	private:
-		template <typename ...Args>
-		void raw_to_console(log_color color, Args const &...args)
-		{
-			if (m_console_handle)
-			{
-				SetConsoleTextAttribute(m_console_handle, static_cast<std::uint16_t>(color));
-			}
-
-			if (m_console_out)
-			{
-				((m_console_out << args), ...);
-				m_console_out << std::flush;
-			}
-		}
-
-		template <typename ...Args>
-		void raw_to_file(Args const &...args)
-		{
-			if (m_file_out)
-			{
-				((m_file_out << args), ...);
-				m_file_out << std::flush;
-			}
-		}
-	private:
-		bool m_did_console_exist{};
-		HANDLE m_console_handle{};
-		std::ofstream m_console_out;
-
-		std::filesystem::path m_file_path;
-		std::ofstream m_file_out;
+		RESET,
+		WHITE = 97,
+		CYAN = 36,
+		MAGENTA = 35,
+		BLUE = 34,
+		GREEN = 32,
+		YELLOW = 33,
+		RED = 31,
+		BLACK = 30
 	};
 
-	template <typename ...Args>
-	inline void log_info(std::string_view format, Args const &...args)
+#define AddColorToStream(color) "\x1b[" << int(color) << "m"
+#define ResetStreamColor "\x1b[" << int(LogColor::RESET) << "m"
+#define HEX_TO_UPPER(value) "0x" << std::hex << std::uppercase << (DWORD64)value << std::dec << std::nouppercase
+
+	class logger final
 	{
-		if (g_logger)
-		{
-			g_logger->log(log_color::blue | log_color::intensify, "Info", format, args...);
-		}
-		else
-		{
-			DebugBreak();
-		}
-	}
 
-	template <typename ...Args>
-	inline void log_error(std::string_view format, Args const &...args)
-	{
-		if (g_logger)
+	public:
+		logger(std::string_view console_title, file file, bool attach_console = true)
+			: m_attach_console(attach_console), m_did_console_exist(false),
+			  m_console_title(console_title), m_original_console_mode(0),
+			  m_console_handle(nullptr), m_file(file),
+			  m_worker(g3::LogWorker::createLogWorker())
 		{
-			g_logger->log(log_color::green | log_color::intensify, "Error", format, args...);
+			initialize();
+
+			g_log = this;
 		}
-		else
+		~logger()
 		{
-			DebugBreak();
+			g_log = nullptr;
 		}
-	}
 
-	template <typename ...Args>
-	inline void log_trace(std::string_view format, Args const &...args)
-	{
-		if (g_logger)
+		void initialize()
 		{
-			g_logger->log(log_color::green | log_color::intensify, "Trace", format, args...);
+			if (m_attach_console)
+			{
+				if (m_did_console_exist = ::AttachConsole(GetCurrentProcessId()); !m_did_console_exist)
+					AllocConsole();
+
+				if (m_console_handle = GetStdHandle(STD_OUTPUT_HANDLE); m_console_handle != nullptr)
+				{
+					SetConsoleTitleA(m_console_title.data());
+					SetConsoleOutputCP(CP_UTF8);
+
+					DWORD console_mode;
+					GetConsoleMode(m_console_handle, &console_mode);
+					m_original_console_mode = console_mode;
+
+					// terminal like behaviour enable full color support
+					console_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+					// prevent clicking in terminal from suspending our main thread
+					console_mode &= ~(ENABLE_QUICK_EDIT_MODE);
+
+					SetConsoleMode(m_console_handle, console_mode);
+				}
+			}
+			create_backup();
+			open_outstreams();
+			initialize_g3log();
 		}
-		else
+		void destroy()
 		{
-			DebugBreak();
-		}
-	}
+			destroy_g3log();
+			close_outstreams();
 
-	template <typename ...Args>
-	inline void log_raw(log_color color, Args const &...args)
-	{
-		if (g_logger)
+			if (m_did_console_exist)
+				SetConsoleMode(m_console_handle, m_original_console_mode);
+
+			if (!m_did_console_exist && m_attach_console)
+				FreeConsole();
+		}
+
+	private:
+		void create_backup()
 		{
-			g_logger->raw(color, args...);
+			if (m_file.exists())
+			{
+				auto file_time = std::filesystem::last_write_time(m_file.get_path());
+				auto time_t = to_time_t(file_time);
+				auto local_time = std::localtime(&time_t);
+				
+				m_file.move(
+					fmt::format(
+						"./backup/{:0>2}-{:0>2}-{}-{:0>2}-{:0>2}-{:0>2}_{}",
+						local_time->tm_mon + 1,
+						local_time->tm_mday,
+						local_time->tm_year + 1900,
+						local_time->tm_hour,
+						local_time->tm_min,
+						local_time->tm_sec,
+						m_file.get_path().filename().string().c_str()
+					)
+				);
+			}
 		}
-		else
+
+		void initialize_g3log()
 		{
-			DebugBreak();
+			m_worker->addSink(std::make_unique<log_sink>(), &log_sink::callback);
+			g3::initializeLogging(m_worker.get());
 		}
-	}
+		void destroy_g3log()
+		{
+			m_worker->removeAllSinks();
+			m_worker.reset();
+		}
 
-#define LOG_INFO_IMPL(format, ...) (::big::log_info(format, __VA_ARGS__))
-#define LOG_INFO(format, ...) LOG_INFO_IMPL(format, __VA_ARGS__)
+		void open_outstreams()
+		{
+			if (m_attach_console)
+				m_console_out.open("CONOUT$", std::ios_base::out | std::ios_base::app);
 
-#define LOG_ERROR_IMPL(format, ...) (::big::log_error(format, __VA_ARGS__))
-#define LOG_ERROR(format, ...) LOG_ERROR_IMPL(format, __VA_ARGS__)
+			m_file_out.open(m_file.get_path(), std::ios_base::out | std::ios_base::trunc);
+		}
+		void close_outstreams()
+		{
+			if (m_attach_console)
+				m_console_out.close();
 
-#define LOG_TRACE_IMPL(format, ...) (::big::log_trace(format, __VA_ARGS__))
-#define LOG_TRACE(format, ...) LOG_TRACE_IMPL(format, __VA_ARGS__)
+			m_file_out.close();
+		}
 
-#define LOG_RAW_IMPL(color, ...) (::big::log_raw(color, __VA_ARGS__))
-#define LOG_RAW(color, ...) LOG_RAW_IMPL(color, __VA_ARGS__)
+	private:
+		struct log_sink
+		{
+			void callback(g3::LogMessageMover log)
+			{
+				if (g_log->m_console_out.is_open())
+					g_log->m_console_out << log.get().toString(log_sink::format_console) << std::flush;
+
+				g_log->m_file_out << log.get().toString(log_sink::format_file) << std::flush;
+			}
+
+			static LogColor get_color(const LEVELS level)
+			{
+				switch (level.value)
+				{
+				case g3::kDebugValue:
+					return LogColor::BLUE;
+				case g3::kInfoValue:
+					return LogColor::GREEN;
+				case g3::kWarningValue:
+					return LogColor::YELLOW;
+				}
+				return g3::internal::wasFatal(level) ? LogColor::RED : LogColor::WHITE;
+			}
+
+			static std::string format_console(const g3::LogMessage& msg)
+			{
+				LogColor color = log_sink::get_color(msg._level);
+				std::stringstream out;
+
+				out
+					<< "[" << msg.timestamp("%H:%M:%S") << "]"
+					<< AddColorToStream(color)
+					<< "[" << msg.level() << "/"
+					<< msg.file() << ":" << msg.line() << "]"
+					<< ResetStreamColor
+					<< ": ";
+
+				return out.str();
+			}
+			static std::string format_file(const g3::LogMessage& msg)
+			{
+				LogColor color = log_sink::get_color(msg._level);
+				std::stringstream out;
+
+				out
+					<< "[" << msg.timestamp("%H:%M:%S") << "]"
+					<< "[" << msg.level() << "/"
+					<< msg.file() << ":" << msg.line() << "]"
+					<< ": ";
+
+				return out.str();
+			}
+		};
+
+	private:
+		friend struct log_sink;
+
+		bool m_attach_console;
+		bool m_did_console_exist;
+
+		std::string_view m_console_title;
+		DWORD m_original_console_mode;
+		HANDLE m_console_handle;
+
+		std::ofstream m_console_out;
+		std::ofstream m_file_out;
+
+		file m_file;
+
+		std::unique_ptr<g3::LogWorker> m_worker;
+
+	};
 }

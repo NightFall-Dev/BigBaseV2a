@@ -45,11 +45,17 @@
 #include <optional>
 #include <variant>
 
+#define FMT_HEADER_ONLY
 #include <fmt/format.h>
 #include <nlohmann/json.hpp>
-#include <StackWalker.h>
 
 #include "logger.hpp"
+
+#include "core/globals.hpp"
+#include "gta/natives.hpp"
+#include "ped/CPed.hpp"
+
+#include "services/notifications/notification_service.hpp"
 
 namespace big
 {
@@ -61,17 +67,15 @@ namespace big
 	inline HMODULE g_hmodule{};
 	inline HANDLE g_main_thread{};
 	inline DWORD g_main_thread_id{};
-	inline std::atomic_bool g_running{ true };
-	
-	struct stackwalker : public StackWalker
-	{
-		using StackWalker::StackWalker;
+	inline std::atomic_bool g_running{ false };
 
-		void OnOutput(LPCSTR szText) override
-		{
-			g_logger->raw(log_color::red, szText);
-		}
-	};
+	inline CPed* g_local_player;
+}
 
-	inline stackwalker g_stackwalker;
+namespace self
+{
+	inline Ped ped;
+	inline Player id;
+	inline Vector3 pos;
+	inline Vehicle veh;
 }

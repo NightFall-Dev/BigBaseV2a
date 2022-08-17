@@ -30,6 +30,8 @@ namespace rage
 
 	class netGameEvent;
 	class netEventMgr;
+
+	class netSyncTree;
 	
 	class netObject;
 	class netObjectMgrBase;
@@ -40,7 +42,6 @@ namespace rage
 
 	class fwRefAwareBase;
 	class fwExtensibleBase;
-	class fwEntity;
 	class fwArchetype;
 }
 
@@ -55,8 +56,6 @@ class CEntity;
 class CDynamicEntity;
 class CPhysical;
 
-class CPed;
-class CVehicle;
 class CObject;
 class CPickup;
 
@@ -66,3 +65,4 @@ class CVehicleFactory;
 class CNetGamePlayer;
 class CNetworkPlayerMgr;
 class CPlayerInfo;
+class CNetworkObjectMgr;
