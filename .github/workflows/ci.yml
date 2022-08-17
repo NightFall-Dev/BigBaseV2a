@@ -12,7 +12,7 @@ jobs:
           submodules: recursive
 
       - name: Setup premake
-        uses: abel0b/setup-premake@v2
+        uses: abel0b/setup-premake@v2.1
         with:
           version: "5.0.0-beta1"
 
@@ -38,5 +38,68 @@ jobs:
         uses: actions/upload-artifact@v3
         with:
           name: binary
-          path: |
-            bin/Release/YimMenu-dev-*.dll
+          path: bin/Release/YimMenu-dev-*.dll
+
+      - name: Generate Build Info
+        id: var
+        run: |
+          echo "::set-output name=full_sha::$(git rev-parse HEAD)"
+          echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [ ci ]
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: binary
+
+      - name: Echo build sha256
+        id: build_sha
+        run: |
+          sha256sum YimMenu.dll > sha256.checksum
+          echo "::set-output name=build_sha::$(cat sha256.checksum)"
+          cat sha256.checksum
+
+      - name: Remove previous Nightly
+        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+        with:
+          delete_release: true
+          tag_name: nightly
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Nightly Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Nightly [${{ needs.build_nightly.outputs.short_sha }}]
+          tag_name: nightly
+          body: |
+            **This release has been build by Github Actions**
+            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Build SHA256:
+            ```
+            ${{ steps.build_sha.outputs.build_sha }}
+            ```
+            To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
+
+            Compare this build hash with one that you generated yourself from the build artifacts.
+            Alternatively you can download the build artifacts, generate a SHA256 checksum and compare it with the below binary.
+            Build artifacts ARE NOT automatically the same as release assets since release assets can be modified afterwards.
+
+            These are nightly builds of YimMenu, they are provided for testing purposes only:
+            - Test if your build environment produces a broken BigBaseV2.dll
+            - Test if source code is out of date and no longer compatible with the current version of GTA V
+
+            If you wish to use this menu as-is you are on your own, no warranty is provided.
+
+            Full Commit Hash:
+            ```
+            ${{ needs.build_nightly.outputs.full_sha }}
+            ```
+          files: |
+            YimMenu.dll
