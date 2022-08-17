@@ -3,12 +3,13 @@
 #include "services/players/player_service.hpp"
 #include "views/view.hpp"
 #include "fonts/fonts.hpp"
-#include "natives.hpp"
-#include "fiber_pool.hpp"
+#include <renderer.hpp>
+#include <natives.hpp>
 
 #define IMGUI_DEFINE_PLACEMENT_NEW
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
+#include "fiber_pool.hpp"
 
 namespace big
 {
@@ -37,7 +38,7 @@ namespace big
 
 		// calculate icons width
 		ImGuiWindow* window = ImGui::GetCurrentWindow();
-		ImGui::PushFont(g->window.font_icon);
+		ImGui::PushFont(g_renderer->m_font_icons);
 		ImVec2 iconsSize = ImGui::CalcTextSize(playerIconsCStr, playerIconsCStr + playerIcons.size());
 		ImVec2 iconsPos(window->DC.CursorPos.x + 300.0f - 32.0f - iconsSize.x, window->DC.CursorPos.y + 2.0f);
 		ImRect iconsBox(iconsPos, iconsPos + iconsSize);
@@ -45,9 +46,7 @@ namespace big
 
 
 		if (playerSelected)
-		{
 			ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.29f, 0.45f, 0.69f, 1.f));
-		}
 
 		ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0.0, 0.5 });
 		ImGui::PushID(plyr->id());
@@ -64,7 +63,7 @@ namespace big
 			ImGui::PopStyleColor();
 
 		// render icons on top of the player button
-		ImGui::PushFont(g->window.font_icon);
+		ImGui::PushFont(g_renderer->m_font_icons);
 		ImGui::RenderTextWrapped(iconsBox.Min, playerIconsCStr, playerIconsCStr + playerIcons.size(), iconsSize.x);
 		ImGui::PopFont();
 	}

@@ -95,8 +95,8 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, PVOID)
 				g_script_mgr.add_script(std::make_unique<script>(&backend::remote_loop, "Remote"));
 				g_script_mgr.add_script(std::make_unique<script>(&backend::noclip_loop, "No Clip"));
 				g_script_mgr.add_script(std::make_unique<script>(&backend::lscustoms_loop, "LS Customs"));
-				g_script_mgr.add_script(std::make_unique<script>(&backend::rainbowpaint_loop, "Rainbow Paint"));
 				g_script_mgr.add_script(std::make_unique<script>(&backend::vehiclefly_loop, "Vehicle Fly"));
+				g_script_mgr.add_script(std::make_unique<script>(&backend::rgbrandomizer_loop, "RGB Randomizer"));
 				g_script_mgr.add_script(std::make_unique<script>(&backend::turnsignal_loop, "Turn Signals"));
 				g_script_mgr.add_script(std::make_unique<script>(&backend::disable_control_action_loop, "Disable Controls"));
 				g_script_mgr.add_script(std::make_unique<script>(&context_menu_service::context_menu, "Context Menu"));
@@ -122,14 +122,6 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, PVOID)
 				g_script_mgr.remove_all_scripts();
 				LOG(INFO) << "Scripts unregistered.";
 
-				// Make sure that all threads created don't have any blocking loops
-				// otherwise make sure that they have stopped executing
-				thread_pool_instance->destroy();
-				LOG(INFO) << "Destroyed thread pool.";
-
-				thread_pool_instance.reset();
-				LOG(INFO) << "Thread pool uninitialized.";
-
 				gui_service_instance.reset();
 				LOG(INFO) << "Gui Service reset.";
 				gta_data_service_instance.reset();
@@ -151,6 +143,14 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, PVOID)
 				context_menu_service_instance.reset();
 				LOG(INFO) << "Context Service reset.";
 				LOG(INFO) << "Services uninitialized.";
+
+				// Make sure that all threads created don't have any blocking loops
+				// otherwise make sure that they have stopped executing
+				thread_pool_instance->destroy();
+				LOG(INFO) << "Destroyed thread pool.";
+
+				thread_pool_instance.reset();
+				LOG(INFO) << "Thread pool uninitialized.";
 
 				hooking_instance.reset();
 				LOG(INFO) << "Hooking uninitialized.";

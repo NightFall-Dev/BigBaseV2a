@@ -6,8 +6,6 @@
 #include "gta/script_thread.hpp"
 #include "script_hook.hpp"
 #include "vmt_hook.hpp"
-#include "MinHook.h"
-#include "gta/enums.hpp"
 
 namespace big
 {
@@ -33,6 +31,9 @@ namespace big
 
 		static void network_group_override(std::int64_t a1, std::int64_t a2, std::int64_t a3);
 
+		static void player_join(CNetworkObjectMgr* _this, CNetGamePlayer* net_player);
+		static void player_leave(CNetworkObjectMgr* _this, CNetGamePlayer* net_player);
+
 		static bool is_dlc_present(Hash dlc_hash);
 
 		static void received_event(
@@ -54,23 +55,14 @@ namespace big
 		static bool receive_net_message(void* netConnectionManager, void* a2, rage::netConnection::InFrame* frame);
 		static void get_network_event_data(int64_t unk, rage::CEventNetwork* net_event);
 
-		static void* assign_physical_index(CNetworkPlayerMgr* netPlayerMgr, CNetGamePlayer* player, uint8_t new_index);
-
 		//SYNC
-		static int64_t received_clone_sync(CNetworkObjectMgr* mgr, CNetGamePlayer* src, CNetGamePlayer* dst, eObjType sync_type, uint16_t obj_id, rage::datBitBuffer* bufer, uint16_t unk, uint32_t timestamp);
+		static int64_t received_clone_sync(CNetworkObjectMgr* mgr, CNetGamePlayer* src, CNetGamePlayer* dst, uint16_t sync_type, uint16_t obj_id, rage::datBitBuffer* bufer, uint16_t unk, uint32_t timestamp);
 	};
 
-	class minhook_keepalive
+	struct minhook_keepalive
 	{
-	public:
-		minhook_keepalive()
-		{
-			MH_Initialize();
-		}
-		~minhook_keepalive()
-		{
-			MH_Uninitialize();
-		}
+		minhook_keepalive();
+		~minhook_keepalive();
 	};
 
 	class hooking
@@ -103,7 +95,8 @@ namespace big
 
 		detour_hook m_network_group_override;
 
-		detour_hook m_assign_physical_index_hook;
+		detour_hook m_player_has_joined_hook;
+		detour_hook m_player_has_left_hook;
 		
 		detour_hook m_is_dlc_present_hook;
 

@@ -6,7 +6,7 @@ namespace big
 {
 	void view::session()
 	{
-		components::sub_title("Session Switcher");
+		components::small_text("Session Switcher");
 		if (ImGui::ListBoxHeader("###session_switch"))
 		{
 			for (const auto& session_type : sessions)
