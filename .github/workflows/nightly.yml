@@ -2,8 +2,8 @@ name: Nightly Build
 
 on:
   schedule:
-    # cronjob that triggers every day at 2PM UTC
-    - cron: '0 14 * * *'
+    # cronjob that triggers every day at 6PM UTC
+    - cron: '0 18 * * *'
   workflow_dispatch:
 
 jobs:
@@ -61,9 +61,9 @@ jobs:
         with:
           name: binary
 
-      - name: Test file for detected bits
+      - name: GTA V Sig Scanner Action
         id: detections
-        uses: yimura/gtav-sigscan-action@v0.0.3
+        uses: Yimura/gtav-sigscan-action@v0.0.3
         with:
           file: ./YimMenu.dll
 
