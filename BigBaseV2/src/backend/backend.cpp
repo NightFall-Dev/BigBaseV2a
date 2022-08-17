@@ -75,6 +75,7 @@ namespace big
 		while (g_running)
 		{
 			looped::vehicle_auto_drive();
+			looped::vehicle_boost_behavior();
 			looped::vehicle_despawn_bypass();
 			looped::vehicle_drive_on_water();
 			looped::vehicle_god_mode();
@@ -82,7 +83,6 @@ namespace big
 			looped::vehicle_jump();
 			looped::vehicle_instant_brake();
 			looped::vehicle_is_targetable();
-			looped::vehicle_rainbow_paint();
 			looped::vehicle_seatbelt();
 			looped::vehicle_speedo_meter();
 
@@ -97,19 +97,6 @@ namespace big
 		while (g_running)
 		{
 			looped::vehicle_turn_signals();
-
-			script::get_current()->yield();
-		}
-	}
-
-	void backend::rgbrandomizer_loop()
-	{
-		LOG(INFO) << "Starting script: rgbrandomizer";
-
-		while (g_running)
-		{
-			looped::rgb_synced_fade();
-			looped::rgb_synced_spasm();
 
 			script::get_current()->yield();
 		}
@@ -166,6 +153,18 @@ namespace big
 		while (g_running)
 		{
 			looped::vehicle_ls_customs();
+
+			script::get_current()->yield();
+		}
+	}
+
+	void backend::rainbowpaint_loop()
+	{
+		LOG(INFO) << "Starting script: Rainbow paint";
+
+		while (g_running)
+		{
+			looped::vehicle_rainbow_paint();
 
 			script::get_current()->yield();
 		}

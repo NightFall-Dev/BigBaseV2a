@@ -2,6 +2,13 @@
 
 namespace big
 {
+	enum class eBoostBehaviors
+	{
+		DEFAULT,
+		INSTANT_REFIL,
+		INFINITE_BOOST
+	};
+
 	enum class CustomWeapon
 	{
 		NONE,
@@ -172,6 +179,7 @@ namespace big
 		SOLO,
 		INVITE_ONLY,
 		JOIN_CREW,
+		SC_TV,
 		LEAVE_ONLINE = -1
 	};
 
@@ -180,6 +188,13 @@ namespace big
 		KMPH,
 		MIPH,
 		MPS
+	};
+
+	enum class RainbowPaintType
+	{
+		Off,
+		Fade,
+		Spasm
 	};
 
 	enum class AutoDriveDestination
