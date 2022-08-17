@@ -2,8 +2,8 @@ name: Nightly Build
 
 on:
   schedule:
-    # cronjob that triggers every day at 2PM UTC
-    - cron: '0 14 * * *'
+    # cronjob that triggers every day at 6PM UTC
+    - cron: '0 18 * * *'
   workflow_dispatch:
 
 jobs:
@@ -19,7 +19,7 @@ jobs:
           submodules: recursive
 
       - name: Setup premake
-        uses: abel0b/setup-premake@v2
+        uses: abel0b/setup-premake@v2.1
         with:
           version: "5.0.0-beta1"
 
@@ -61,23 +61,12 @@ jobs:
         with:
           name: binary
 
-      - name: Test file for detected bits
+      - name: GTA V Sig Scanner Action
         id: detections
-        uses: yimura/gtav-sigscan-action@v0.0.3
+        uses: Yimura/gtav-sigscan-action@v0.0.3
         with:
           file: ./YimMenu.dll
 
-      - name: Notify on Discord
-        if: ${{ steps.detections.outputs.is_detected == 'true' }}
-        uses: tsickert/discord-webhook@v4.0.0
-        with:
-          webhook-url: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          embed-title: YimMenu has been detected by the sigscanner!
-          embed-description: |
-            The following bits have been detected:
-            ```yml
-            ${{ steps.detections.outputs.detected_string }}
-            ```
   check_date:
     runs-on: ubuntu-latest
     name: Check latest commit
