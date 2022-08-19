@@ -96,6 +96,9 @@ namespace big
 		
 		draw_pair_option("Reports", g->notifications.reports);
 		draw_pair_option("Transaction Error / Rate Limit", g->notifications.transaction_rate_limit);
+// BigBaseV2\src\hooks\protections\received_clone_sync.cpp(65,27): error C2039: 'mismatch_sync_type': is not a member of 'big::menu_settings::notifications'
+		draw_pair_option("Mismatch sync type", g->notifications.mismatch_sync_type);
+		draw_pair_option("Out of allowed range sync type", g->notifications.out_of_allowed_range_sync_type);
 		draw_pair_option("Invalid sync", g->notifications.invalid_sync);
 	}
 

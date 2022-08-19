@@ -82,6 +82,9 @@ namespace big
 
 			pair send_net_info_to_lobby{};
 			pair transaction_rate_limit{};
+			// BigBaseV2\src\hooks\protections\received_clone_sync.cpp(56,27): error C2039: 'out_of_allowed_range_sync_type': is not a member of 'big::menu_settings::notifications' 
+			pair mismatch_sync_type{};
+			pair out_of_allowed_range_sync_type{};
 			pair invalid_sync{};
 		};
 
@@ -140,7 +143,7 @@ namespace big
 			bool off_radar = false;
 			bool super_run = false;
 			int wanted_level = 0;
-			bool preview_ped = false;
+			//bool preview_ped = false;
 			bool god_mode = false;
 			bool proof_bullet = false;
 			bool proof_fire = false;
@@ -174,8 +177,9 @@ namespace big
 
 			hotkeys hotkeys{};
 		};
-
-		struct spawn
+		// BigBaseV2\src\services\gui\gui_service.hpp(70,53): error C2039: 'spawn_vehicle': is not a member of 'big::view' (compiling source file src\gui\components\nav_item.cpp)
+		//struct spawn
+		struct spawn_vehicle
 		{
 			bool preview_vehicle = false;
 			bool spawn_inside = false;
@@ -242,16 +246,17 @@ namespace big
 
 			AutoDriveDestination auto_drive_destination = AutoDriveDestination::STOPPED;
 			AutoDriveStyle auto_drive_style = AutoDriveStyle::LAW_ABIDING;
+			float auto_drive_speed = 1;
 			bool auto_turn_signals = false;
 			bool drive_on_water = false;
 			bool horn_boost = false;
 			bool vehicle_jump = false;
 			bool instant_brake = false;
 			bool is_targetable = true;
-			bool ls_customs = false; // don't save this to dis
+			bool ls_customs = false; // don't save this to disk
 			bool seatbelt = false;
 			bool turn_signals = false;
-			float auto_drive_speed = 1;
+			//float auto_drive_speed = 1;
 			int rainbow_paint = 0;
 			bool rainbow_primary = false;
 			bool rainbow_secondary = false;
@@ -288,6 +293,7 @@ namespace big
 			bool player = false;
 
 			ImU32 color = 3357612055;
+			float gui_scale = 1.f;// Add gui_scale
 
 			ImFont* font_title = nullptr;
 			ImFont* font_sub_title = nullptr;
@@ -336,6 +342,11 @@ namespace big
 			ImU32 default_color = 4285713522;
 			ImU32 friend_color = 4293244509;
 		};
+// BigBaseV2\src\services\gui\gui_service.hpp(76,1): error C2065: 'spawn_ped': undeclared identifier (compiling source file src\gui\components\nav_item.cpp) 
+		struct spawn_ped
+		{
+			bool preview_ped = false;
+		};
 
 	public:
 		int friend_count = 0;
@@ -350,8 +361,10 @@ namespace big
 		self self{};
 		session session{};
 		settings settings{};
-		spawn spawn{};
+		//spawn spawn{};
+		spawn_vehicle spawn_vehicle{};// Add spawn_vehicle
 		clone_pv clone_pv{};
+		spawn_ped spawn_ped{};// Add spawn_ped
 		spoofing spoofing{};
 		vehicle vehicle{};
 		weapons weapons{};
@@ -520,14 +533,14 @@ namespace big
 			this->self.no_ragdoll = j["self"]["no_ragdoll"];
 			this->self.off_radar = j["self"]["off_radar"];
 			this->self.super_run = j["self"]["super_run"];
-			this->self.preview_ped = j["self"]["preview_ped"];
+			//this->self.preview_ped = j["self"]["preview_ped"];
 
 			this->settings.hotkeys.menu_toggle = j["settings"]["hotkeys"]["menu_toggle"];
 
-			this->spawn.preview_vehicle = j["spawn"]["preview_vehicle"];
-			this->spawn.spawn_inside = j["spawn"]["spawn_inside"];
-			this->spawn.spawn_maxed = j["spawn"]["spawn_maxed"];
-			this->spawn.plate = j["spawn"]["plate"];
+			this->spawn_vehicle.preview_vehicle = j["spawn_vehicle"]["preview_vehicle"];
+			this->spawn_vehicle.spawn_inside = j["spawn_vehicle"]["spawn_inside"];
+			this->spawn_vehicle.spawn_maxed = j["spawn_vehicle"]["spawn_maxed"];
+			this->spawn_vehicle.plate = j["spawn_vehicle"]["plate"];
 
 			this->clone_pv.preview_vehicle = j["clone_pv"]["preview_vehicle"];
 			this->clone_pv.spawn_inside = j["clone_pv"]["spawn_inside"];
@@ -535,6 +548,8 @@ namespace big
 			this->clone_pv.spawn_maxed = j["clone_pv"]["spawn_maxed"];
 			this->clone_pv.clone_plate = j["clone_pv"]["clone_plate"];
 			this->clone_pv.plate = j["clone_pv"]["plate"];
+
+			this->spawn_ped.preview_ped = j["spawn_ped"]["preview_ped"];
 
 			this->spoofing.spoof_ip = j["spoofing"]["spoof_ip"];
 			this->spoofing.spoof_rockstar_id = j["spoofing"]["spoof_rockstar_id"];
@@ -594,6 +609,7 @@ namespace big
 			this->weapons.ammo_special.toggle = j["weapons"]["ammo_special"]["toggle"];
 
 			this->window.color = j["window"]["color"];
+			this->window.gui_scale = j["window"]["gui_scale"];// Add gui_scale
 			this->window.debug = j["window"]["debug"];
 			this->window.handling = j["window"]["handling"];
 			this->window.log = j["window"]["log"];
@@ -705,6 +721,9 @@ namespace big
 						},
 						{ "send_net_info_to_lobby", return_notify_pair(g->notifications.send_net_info_to_lobby) },
 						{ "transaction_rate_limit", return_notify_pair(g->notifications.transaction_rate_limit) },
+						// Add BigBaseV2\src\hooks\protections\received_clone_sync.cpp(58,27): error C2039: 'out_of_allowed_range_sync_type': is not a member of 'big::menu_settings::notifications'
+						{ "mismatch_sync_type", return_notify_pair(g->notifications.mismatch_sync_type) },
+						{ "out_of_allowed_range_sync_type", return_notify_pair(g->notifications.out_of_allowed_range_sync_type) },
 						{ "invalid_sync", return_notify_pair(g->notifications.invalid_sync) }
 					}
 				},
@@ -773,7 +792,7 @@ namespace big
 						{ "no_ragdoll", this->self.no_ragdoll },
 						{ "off_radar", this->self.off_radar },
 						{ "super_run", this->self.super_run },
-						{ "preview_ped", this->self.preview_ped }
+						//{ "preview_ped", this->self.preview_ped }
 					}
 				},
 				{
@@ -795,11 +814,17 @@ namespace big
 					}
 				},
 				{
-					"spawn", {
-						{ "preview_vehicle", this->spawn.preview_vehicle },
-						{ "spawn_inside", this->spawn.spawn_inside },
-						{ "spawn_maxed", this->spawn.spawn_maxed},
-						{ "plate", this->spawn.plate }
+					// Add BigBaseV2\src\services\gui\gui_service.hpp(70,53): error C2039: 'spawn_vehicle': is not a member of 'big::view' (compiling source file src\main.cpp) 
+					"spawn_vehicle", {
+						{ "preview_vehicle", this->spawn_vehicle.preview_vehicle },
+						{ "spawn_inside", this->spawn_vehicle.spawn_inside },
+						{ "spawn_maxed", this->spawn_vehicle.spawn_maxed},
+						{ "plate", this->spawn_vehicle.plate }
+					}
+				},
+				{
+					"spawn_ped", {
+						{ "preview_ped", this->spawn_ped.preview_ped },
 					}
 				},
 				{
@@ -883,6 +908,7 @@ namespace big
 				{
 					"window", {
 						{ "color", this->window.color },
+						{ "gui_scale", this->window.gui_scale },// Add gui_scale
 						{ "debug", this->window.debug },
 						{ "handling", this->window.handling },
 						{ "log", this->window.log },
