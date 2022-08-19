@@ -94,13 +94,15 @@ namespace big
 		m_player_has_left_hook.enable();
 
 		m_received_event_hook.enable();
-
+		m_is_dlc_present_hook.enable();
 		m_send_net_info_to_lobby.enable();
 
 		m_receive_net_message_hook.enable();
 		m_get_network_event_data_hook.enable();
 
 		m_received_clone_sync_hook.enable();
+		
+		MH_ApplyQueued();
 
 		m_enabled = true;
 	}
@@ -117,6 +119,7 @@ namespace big
 		m_send_net_info_to_lobby.disable();
 
 		m_received_event_hook.disable();
+		m_is_dlc_present_hook.disable();
 
 		m_player_has_joined_hook.disable();
 		m_player_has_left_hook.disable();
@@ -132,19 +135,11 @@ namespace big
 		m_get_label_text.disable();
 
 		m_run_script_threads_hook.disable();
+		
+		MH_ApplyQueued();
 
 		SetWindowLongPtrW(g_pointers->m_hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(m_og_wndproc));
 		m_swapchain_hook.disable();
-	}
-
-	minhook_keepalive::minhook_keepalive()
-	{
-		MH_Initialize();
-	}
-
-	minhook_keepalive::~minhook_keepalive()
-	{
-		MH_Uninitialize();
 	}
 
 	bool hooks::run_script_threads(std::uint32_t ops_to_execute)
@@ -152,10 +147,7 @@ namespace big
 		TRY_CLAUSE
 		{
 			if (g_running)
-			{
 				g_script_mgr.tick();
-			}
-
 			return g_hooking->m_run_script_threads_hook.get_original<functions::run_script_threads>()(ops_to_execute);
 		} EXCEPT_CLAUSE
 		return false;

@@ -6,6 +6,8 @@
 #include "gta/script_thread.hpp"
 #include "script_hook.hpp"
 #include "vmt_hook.hpp"
+#include "MinHook.h"
+#include "gta/enums.hpp"
 
 namespace big
 {
@@ -56,13 +58,23 @@ namespace big
 		static void get_network_event_data(int64_t unk, rage::CEventNetwork* net_event);
 
 		//SYNC
-		static int64_t received_clone_sync(CNetworkObjectMgr* mgr, CNetGamePlayer* src, CNetGamePlayer* dst, uint16_t sync_type, uint16_t obj_id, rage::datBitBuffer* bufer, uint16_t unk, uint32_t timestamp);
+		static int64_t received_clone_sync(CNetworkObjectMgr* mgr, CNetGamePlayer* src, CNetGamePlayer* dst, eObjType/*uint16_t*/ sync_type, uint16_t obj_id, rage::datBitBuffer* bufer, uint16_t unk, uint32_t timestamp);
 	};
 
-	struct minhook_keepalive
+	class minhook_keepalive
 	{
-		minhook_keepalive();
-		~minhook_keepalive();
+	public:
+		//minhook_keepalive();
+		//~minhook_keepalive();
+
+		minhook_keepalive()
+		{
+			MH_Initialize();
+		}
+		~minhook_keepalive()
+		{
+			MH_Uninitialize();
+		}
 	};
 
 	class hooking

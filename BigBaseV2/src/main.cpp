@@ -122,6 +122,14 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, PVOID)
 				g_script_mgr.remove_all_scripts();
 				LOG(INFO) << "Scripts unregistered.";
 
+				// Make sure that all threads created don't have any blocking loops
+				// otherwise make sure that they have stopped executing
+				thread_pool_instance->destroy();
+				LOG(INFO) << "Destroyed thread pool.";
+
+				thread_pool_instance.reset();
+				LOG(INFO) << "Thread pool uninitialized.";
+
 				gui_service_instance.reset();
 				LOG(INFO) << "Gui Service reset.";
 				gta_data_service_instance.reset();
@@ -146,11 +154,11 @@ BOOL APIENTRY DllMain(HMODULE hmod, DWORD reason, PVOID)
 
 				// Make sure that all threads created don't have any blocking loops
 				// otherwise make sure that they have stopped executing
-				thread_pool_instance->destroy();
-				LOG(INFO) << "Destroyed thread pool.";
+				//thread_pool_instance->destroy();
+				//LOG(INFO) << "Destroyed thread pool.";
 
-				thread_pool_instance.reset();
-				LOG(INFO) << "Thread pool uninitialized.";
+				//thread_pool_instance.reset();
+				//LOG(INFO) << "Thread pool uninitialized.";
 
 				hooking_instance.reset();
 				LOG(INFO) << "Hooking uninitialized.";
