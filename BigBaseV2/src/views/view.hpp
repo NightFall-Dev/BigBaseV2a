@@ -33,11 +33,8 @@ namespace big
 		static void session();
 		static void settings();
 		static void spawn();
-		//BigBaseV2\src\services\gui\gui_service.hpp(70,53): error C2039: 'spawn_vehicle': is not a member of 'big::view' (compiling source file src\main.cpp)
 		static void pv();
-		//static void vehicle_fun();
-		static void fun_vehicle();
-		static void spawn_ped();
+		static void vehicle_fun();
 		static void persist_car();
 		static void spoofing();
 		static void teleport();
