@@ -1,0 +1,57 @@
+name:Manual Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_manual:
+    runs-on: windows-latest
+    name: Build Manually
+    steps:
+      #- uses: actions/checkout@v2.4.0
+      #  with:
+      #    submodules: recursive
+
+      #- name: Setup .NET Core SDK
+      #  uses: actions/setup-dotnet@v2.1.0
+      #  with:
+      #    dotnet-version: 6.0.x
+
+      - name: Setup premake
+        uses: abel0b/setup-premake@v2.1
+        with:
+          version: "5.0.0-beta1"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Clone repository
+        run: git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
+
+      - name: Check repository for latest changes
+        run: git pull && git submodule update
+
+      - name: Generate premake5 project
+        run: premake5 vs2019
+        shell: bash
+
+      - name: Restore dependencies
+        run: msbuild BigBaseV2.sln /t:Restore /p:Configuration=Release
+
+      - name: Build 64bit release DLL
+        run: |
+          msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
+
+      - name: Check if DLL got built
+        run: if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
+
+      - name: Rename DLL to YimMenu-dev-{GITHUB_SHA}.dll
+        run: ren BigBaseV2.dll YimMenu-dev-${{github.sha}}.dll
+        working-directory: bin/Release/
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary
+          path: |
+            bin/Release/YimMenu-dev-*.dll
