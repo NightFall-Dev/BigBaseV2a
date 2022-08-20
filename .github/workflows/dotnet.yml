@@ -1,6 +1,9 @@
 name: Manual Build
 
 on:
+  schedule:
+    # cronjob that triggers every day at 6PM UTC
+    - cron: '0 18 * * *'
   workflow_dispatch:
 
 jobs:
@@ -63,13 +66,43 @@ jobs:
           name: binary
           path: |
             YimMenu/bin/Release/YimMenu-dev-*.dll
+  check_detections:
+    runs-on: ubuntu-latest
+    name: Check for detections in Binary and notify if necesarry
+    needs: build_manual
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: binary
 
       - name: Test file for detected bits
         id: detections
         uses: Yimura/gtav-sigscan-action@v0.0.3
         with:
-          file: YimMenu/bin/Release/YimMenu-dev-*.dll
+          file: ./YimMenu-dev-*.dll
 
+  check_date:
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    needs: build_manual
+    outputs:
+      should_run: ${{ steps.should_run.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v2
+
+      - id: should_run
+        continue-on-error: true
+        name: Check if latest commit date is within the previous 24 hours
+        if: ${{ github.event_name == 'schedule' }}
+        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [ check_date, build_manual ]
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    steps:
       - name: Download Artifact
         uses: actions/download-artifact@v2
         with:
@@ -78,7 +111,7 @@ jobs:
       - name: Echo build sha256
         id: build_sha
         run: |
-          sha256sum YimMenu.dll > sha256.checksum
+          sha256sum YimMenu-dev-*.dll > sha256.checksum
           echo "::set-output name=build_sha::$(cat sha256.checksum)"
           cat sha256.checksum
 
@@ -120,4 +153,4 @@ jobs:
             ${{ needs.build_manual.outputs.full_sha }}
             ```
           files: |
-            YimMenu.dll
+            YimMenu-dev-${{github.sha}}.dll
