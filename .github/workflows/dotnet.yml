@@ -1,4 +1,4 @@
-name:Manual Build
+name: Manual Build
 
 on:
   workflow_dispatch:
@@ -27,9 +27,11 @@ jobs:
 
       - name: Clone repository
         run: git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
+        working-directory: YimMenu
 
       - name: Check repository for latest changes
         run: git pull && git submodule update
+        working-directory: YimMenu
 
       - name: Generate premake5 project
         run: premake5 vs2019
