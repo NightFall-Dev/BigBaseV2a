@@ -72,6 +72,7 @@ jobs:
         run: |
           echo "::set-output name=full_sha::$(git rev-parse HEAD)"
           echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+        working-directory: YimMenu
 
   check_detections:
     runs-on: ubuntu-latest
