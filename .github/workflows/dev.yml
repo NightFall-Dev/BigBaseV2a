@@ -34,7 +34,7 @@ jobs:
       - name: Clone repository
         run: |
          git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
-        working-directory: YimMenu
+        working-directory: ${{ github.GITHUB_WORKSPACE }}
 
       - name: Check repository for latest changes
         run: |
