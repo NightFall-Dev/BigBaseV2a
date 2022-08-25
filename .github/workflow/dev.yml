@@ -1,4 +1,4 @@
-name: Manual Build
+name: Dev Build
 
 on:
   schedule:
@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_manual:
+  build_dev:
     runs-on: windows-latest
-    name: Build Manually
+    name: Build Dev
     outputs:
       full_sha: ${{ steps.var.outputs.full_sha }}
       short_sha: ${{ steps.var.outputs.short_sha }}
@@ -28,36 +28,43 @@ jobs:
         with:
           version: "5.0.0-beta1"
 
-      - name: Add msbuild to PATH
+      - name: Setup MSBuild environment
         uses: microsoft/setup-msbuild@v1.1
 
       - name: Clone repository
-        run: git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
+        run: |
+         git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
+        working-directory: YimMenu
 
       - name: Check repository for latest changes
-        run: git pull && git submodule update
+        run: |
+         git pull && git submodule update
         working-directory: YimMenu
 
       - name: Generate premake5 project
-        run: premake5 vs2019
+        run: |
+         premake5 vs2019
         shell: bash
         working-directory: YimMenu
 
       - name: Restore dependencies
-        run: msbuild BigBaseV2.sln /t:Restore /p:Configuration=Release
+        run: |
+         msbuild BigBaseV2.sln /t:Restore /p:Configuration=Release
         working-directory: YimMenu
 
       - name: Build 64bit release DLL
         run: |
-          msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
+         msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
         working-directory: YimMenu
 
       - name: Check if DLL got built
-        run: if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
+        run: |
+         if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
         working-directory: YimMenu
 
       - name: Rename DLL to YimMenu-dev-{GITHUB_SHA}.dll
-        run: ren BigBaseV2.dll YimMenu-dev-${{github.sha}}.dll
+        run: |
+         ren BigBaseV2.dll YimMenu-dev-${{github.sha}}.dll
         working-directory: YimMenu/bin/Release/
 
       - name: Upload Artifact
@@ -65,22 +72,22 @@ jobs:
         with:
           name: binary
           path: |
-            YimMenu/bin/Release/YimMenu-dev-*.dll
+           YimMenu/bin/Release/YimMenu-dev-*.dll
 
       - name: Generate Build Info
         id: var
         run: |
-          echo "::set-output name=full_sha::$(git rev-parse HEAD)"
-          echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+         echo "::set-output name=full_sha::$(git rev-parse HEAD)"
+         echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
         working-directory: YimMenu
 
   check_detections:
     runs-on: ubuntu-latest
     name: Check for detections in Binary and notify if necesarry
-    needs: build_manual
+    needs: build_dev
     steps:
-      - name: Download Artifact
-        uses: actions/download-artifact@v2
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
         with:
           name: binary
 
@@ -93,26 +100,27 @@ jobs:
   check_date:
     runs-on: ubuntu-latest
     name: Check latest commit
-    needs: build_manual
+    needs: build_dev
     outputs:
       should_run: ${{ steps.should_run.outputs.should_run }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
       - id: should_run
         continue-on-error: true
         name: Check if latest commit date is within the previous 24 hours
         if: ${{ github.event_name == 'schedule' }}
-        run: test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+        run: |
+         test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
 
   create_release:
     runs-on: ubuntu-latest
     name: Create Release
-    needs: [ check_date, build_manual ]
+    needs: [ check_date, build_dev ]
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3.0.0
         with:
           name: binary
 
@@ -134,7 +142,7 @@ jobs:
       - name: Nightly Release
         uses: softprops/action-gh-release@v1
         with:
-          name: Nightly [${{ needs.build_manual.outputs.short_sha }}]
+          name: Nightly [${{ needs.build_dev.outputs.short_sha }}]
           tag_name: nightly
           body: |
             **This release has been build by Github Actions**
@@ -158,7 +166,7 @@ jobs:
 
             Full Commit Hash:
             ```
-            ${{ needs.build_manual.outputs.full_sha }}
+            ${{ needs.build_dev.outputs.full_sha }}
             ```
           files: |
             YimMenu-dev-${{github.sha}}.dll
