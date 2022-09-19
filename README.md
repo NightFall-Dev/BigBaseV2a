@@ -19,7 +19,7 @@ Requirements:
 
  * [git](#git)
  * [premake5](#premake5)
- * [Visual studio 2022](#vs2022)
+ * [Visual studio 2022](#visual-studio-2022)
 
 If you have both of the above requirements you can skip to [cloning the git repo and generating the project files](#cloning-and-generating-project-files).
 
