@@ -1,0 +1,55 @@
+name: Test Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_windows:
+    runs-on: windows-latest
+    name: Test Build
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup premake
+        uses: abel0b/setup-premake@v2.1
+        with:
+          version: "5.0.0-beta1"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Generate premake5 project
+        run: premake5 vs2019
+        shell: bash
+
+      - name: Build 64bit release DLL
+        run: |
+          msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: binary
+          path: |
+            bin/Release/BigBaseV2.dll
+
+      - name: Check if DLL got built
+        run: if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
+
+  check_detections:
+    runs-on: ubuntu-latest
+    name: Check for detections in Binary
+    needs: build_windows
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: binary
+
+      - name: Test DLL for Detections
+        id: detections
+        uses: yimura/gtav-sigscan-action@v0.0.3
+        with:
+          file: ./BigBaseV2.dll
