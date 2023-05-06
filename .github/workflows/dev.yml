@@ -14,53 +14,34 @@ jobs:
       short_sha: ${{ steps.var.outputs.short_sha }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.0.0
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
-      #- name: Setup .NET Core SDK
-      #  uses: actions/setup-dotnet@v2.1.0
-      #  with:
-      #    dotnet-version: 6.0.x
-
       - name: Setup premake
-        uses: abel0b/setup-premake@v2.1
+        uses: abel0b/setup-premake@v2.2
         with:
-          version: "5.0.0-beta1"
+          version: "5.0.0-beta2"
 
-      - name: Setup MSBuild environment
+      - name: Add msbuild to PATH
         uses: microsoft/setup-msbuild@v1.1
-
-      #- name: Clone repository
-      #  run: |
-      #   git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
-      #  working-directory: ${{ github.GITHUB_WORKSPACE }}
 
       - name: Check repository for latest changes
         run: |
          git pull && git submodule update
-      #  working-directory: YimMenu
 
       - name: Generate premake5 project
         run: |
          premake5 vs2019
         shell: bash
-      #  working-directory: YimMenu
-
-      - name: Restore dependencies
-        run: |
-         msbuild BigBaseV2.sln /t:Restore /p:Configuration=Release
-      #  working-directory: YimMenu
 
       - name: Build 64bit release DLL
         run: |
          msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
-      #  working-directory: YimMenu
 
       - name: Check if DLL got built
         run: |
          if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
-      #  working-directory: YimMenu
 
       - name: Rename DLL to YimMenu-dev-{GITHUB_SHA}.dll
         run: |
@@ -68,7 +49,7 @@ jobs:
         working-directory: bin/Release/
 
       - name: Upload a Build Artifact
-        uses: actions/upload-artifact@v3.1.0
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: binary
           path: |
@@ -77,9 +58,8 @@ jobs:
       - name: Generate Build Info
         id: var
         run: |
-         echo "::set-output name=full_sha::$(git rev-parse HEAD)"
-         echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
-      #  working-directory: YimMenu
+         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
 
   check_detections:
     runs-on: ubuntu-latest
@@ -90,7 +70,7 @@ jobs:
     needs: build_dev
     steps:
       - name: Download a Build Artifact
-        uses: actions/download-artifact@v3.0.0
+        uses: actions/download-artifact@v3.0.2
         with:
           name: binary
 
@@ -119,7 +99,7 @@ jobs:
       var_build_num: ${{ steps.var_build_num.outputs.var_build_num }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3.0.0
+        uses: actions/checkout@v3
         with:
           submodules: recursive
 
@@ -128,14 +108,13 @@ jobs:
         name: Check if latest commit date is within the previous 24 hours
         if: ${{ github.event_name == 'schedule' }}
         run: |
-         test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "::set-output name=should_run::false"
+         test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "should_run=false" >> $GITHUB_OUTPUT
 
       - name: Read Build Number
         id: var_build_num
         run: |
-         cat BUILD_NUM > NUM
-         echo "::set-output name=var_build_num::$(cat NUM)"
-         cat NUM
+         echo "var_build_num=$(cat BUILD_NUM)" >> $GITHUB_OUTPUT
+         cat BUILD_NUM
 
   create_release:
     runs-on: ubuntu-latest
@@ -144,7 +123,7 @@ jobs:
     if: ${{ needs.check_date.outputs.should_run != 'false' }}
     steps:
       - name: Download Artifact
-        uses: actions/download-artifact@v3.0.0
+        uses: actions/download-artifact@v3.0.2
         with:
           name: binary
 
@@ -152,11 +131,11 @@ jobs:
         id: build_sha
         run: |
           sha256sum YimMenu-dev-*.dll > sha256.checksum
-          echo "::set-output name=build_sha::$(cat sha256.checksum)"
+          echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
           cat sha256.checksum
 
-      - name: Remove previous dev build
-        uses: dev-drprasad/delete-tag-and-release@v0.2.0
+      - name: Remove previous build
+        uses: dev-drprasad/delete-tag-and-release@v1.0
         with:
           delete_release: true
           tag_name: 1.61
@@ -169,7 +148,7 @@ jobs:
           name: Dev Build ${{ needs.check_date.outputs.var_build_num }} [${{ needs.build_dev.outputs.short_sha }}]
           tag_name: 1.61
           body: |
-            **This release has been build by Github Actions**
+            **This release has been built by Github Actions**
             [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
 
             Build SHA256:
@@ -182,7 +161,7 @@ jobs:
             Alternatively you can download the build artifacts, generate a SHA256 checksum and compare it with the below binary.
             Build artifacts ARE NOT automatically the same as release assets since release assets can be modified afterwards.
 
-            These are dev build of YimMenu, they are provided for testing purposes only:
+            These are dev build of BigBaseV2 / YimMenu, they are provided for testing purposes only:
             - Test if your build environment produces a broken BigBaseV2.dll
             - Test if source code is out of date and no longer compatible with the current version of GTA V
 
