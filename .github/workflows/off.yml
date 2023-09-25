@@ -1,0 +1,89 @@
+name: Official Build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build_rel:
+    runs-on: windows-latest
+    name: Build Official Release
+    outputs:
+      full_sha: ${{ steps.var.outputs.full_sha }}
+      short_sha: ${{ steps.var.outputs.short_sha }}
+    steps:
+      - name: Setup premake
+        uses: abel0b/setup-premake@v2.1
+        with:
+          version: "5.0.0-beta1"
+
+      - name: Setup MSBuild environment
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Clone main repository
+        run: |
+         git clone https://github.com/YimMenu/YimMenu.git --recurse-submodules
+        working-directory: ${{ github.GITHUB_WORKSPACE }}
+
+      - name: Generate project
+        run: |
+         script.bat
+        shell: cmd
+        working-directory: YimMenu
+
+      - name: Build 64bit release DLL
+        run: |
+         msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
+        working-directory: YimMenu
+
+      - name: Check if DLL got built
+        run: |
+         if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
+        working-directory: YimMenu
+
+      - name: Rename DLL to YimMenu-dev-{GITHUB_SHA}.dll
+        run: |
+         ren BigBaseV2.dll YimMenu-dev-${{github.sha}}.dll
+        working-directory: bin/Release/
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.0
+        with:
+          name: binary
+          path: |
+           bin/Release/YimMenu-dev-*.dll
+
+      - name: Generate Build Info
+        id: var
+        run: |
+         echo "::set-output name=full_sha::$(git rev-parse HEAD)"
+         echo "::set-output name=short_sha::$(git rev-parse --short HEAD)"
+        working-directory: YimMenu
+
+  check_detections:
+    runs-on: ubuntu-latest
+    name: Check for detections in Binary and notify if necesarry
+    outputs:
+      is_detected: ${{ steps.detections.outputs.is_detected }}
+      detected_string: ${{ steps.detections.outputs.detected_string }}
+    needs: build_rel
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.0
+        with:
+          name: binary
+
+      - name: Test file for detected bits
+        id: detections
+        uses: Yimura/gtav-sigscan-action@v0.0.3
+        with:
+          file: ./YimMenu-dev-*.dll
+
+  notify_detection:
+    runs-on: ubuntu-latest
+    name: Notify of detections in Binary
+    needs: check_detections
+    if: ${{ needs.check_detections.outputs.is_detected == 'true' }}
+    steps:
+      - name: Test Action Outputs
+        run: |
+         echo ${{ needs.check_detections.outputs.detected_string }}

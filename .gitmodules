@@ -1,0 +1,18 @@
+[submodule "vendor/fmtlib"]
+	path = vendor/fmtlib
+	url = https://github.com/NightFall-Dev/fmt.git
+[submodule "vendor/json"]
+	path = vendor/json
+	url = https://github.com/NightFall-Dev/json.git
+[submodule "vendor/MinHook"]
+	path = vendor/MinHook
+	url = https://github.com/NightFall-Dev/minhook.git
+[submodule "vendor/g3log"]
+	path = vendor/g3log
+	url = https://github.com/NightFall-Dev/g3log.git
+[submodule "vendor/GTAV-Classes"]
+	path = vendor/GTAV-Classes
+	url = https://github.com/NightFall-Dev/GTAV-Classes.git
+[submodule "vendor/ImGui"]
+	path = vendor/ImGui
+	url = https://github.com/NightFall-Dev/gtav-imgui.git

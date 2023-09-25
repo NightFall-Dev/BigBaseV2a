@@ -1,0 +1,175 @@
+name: Dev Build
+
+on:
+  schedule:
+    - cron: '0 8 * * 6'
+  workflow_dispatch:
+
+jobs:
+  build_dev:
+    runs-on: windows-latest
+    name: Build Dev
+    outputs:
+      full_sha: ${{ steps.var.outputs.full_sha }}
+      short_sha: ${{ steps.var.outputs.short_sha }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup premake
+        uses: abel0b/setup-premake@v2.2
+        with:
+          version: "5.0.0-beta2"
+
+      - name: Add msbuild to PATH
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: Check repository for latest changes
+        run: |
+         git pull && git submodule update
+
+      - name: Generate premake5 project
+        run: |
+         premake5 vs2019
+        shell: bash
+
+      - name: Build 64bit release DLL
+        run: |
+         msbuild /p:Configuration=Release /p:Platform=x64 BigBaseV2.sln -m /warnaserror
+
+      - name: Check if DLL got built
+        run: |
+         if (-Not (Test-Path -path "bin/Release/BigBaseV2.dll")) {throw 1}
+
+      - name: Rename DLL to YimMenu-dev-{GITHUB_SHA}.dll
+        run: |
+         ren BigBaseV2.dll YimMenu-dev-${{github.sha}}.dll
+        working-directory: bin/Release/
+
+      - name: Upload a Build Artifact
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: binary
+          path: |
+           bin/Release/YimMenu-dev-*.dll
+
+      - name: Generate Build Info
+        id: var
+        run: |
+         echo "full_sha=$(git rev-parse HEAD)" >> $env:GITHUB_OUTPUT
+         echo "short_sha=$(git rev-parse --short HEAD)" >> $env:GITHUB_OUTPUT
+
+  check_detections:
+    runs-on: ubuntu-latest
+    name: Check for detections in Binary and notify if necesarry
+    outputs:
+      is_detected: ${{ steps.detections.outputs.is_detected }}
+      detected_string: ${{ steps.detections.outputs.detected_string }}
+    needs: build_dev
+    steps:
+      - name: Download a Build Artifact
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: binary
+
+      - name: Test file for detected bits
+        id: detections
+        uses: Yimura/gtav-sigscan-action@v0.0.3
+        with:
+          file: ./YimMenu-dev-*.dll
+
+  notify_detection:
+    runs-on: ubuntu-latest
+    name: Notify of detections in Binary
+    needs: check_detections
+    if: ${{ needs.check_detections.outputs.is_detected == 'true' }}
+    steps:
+      - name: Test Action Outputs
+        run: |
+         echo ${{ needs.check_detections.outputs.detected_string }}
+
+  check_date:
+    runs-on: ubuntu-latest
+    name: Check latest commit
+    needs: build_dev
+    outputs:
+      should_run: ${{ steps.should_run.outputs.should_run }}
+      var_build_num: ${{ steps.var_build_num.outputs.var_build_num }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - id: should_run
+        continue-on-error: true
+        name: Check if latest commit date is within the previous 24 hours
+        if: ${{ github.event_name == 'schedule' }}
+        run: |
+         test -z $(git rev-list  --after="24 hours"  ${{ github.sha }}) && echo "should_run=false" >> $GITHUB_OUTPUT
+
+      - name: Read Build Number
+        id: var_build_num
+        run: |
+         echo "var_build_num=$(cat BUILD_NUM)" >> $GITHUB_OUTPUT
+         cat BUILD_NUM
+
+  create_release:
+    runs-on: ubuntu-latest
+    name: Create Release
+    needs: [ check_date, build_dev ]
+    if: ${{ needs.check_date.outputs.should_run != 'false' }}
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: binary
+
+      - name: Echo build sha256
+        id: build_sha
+        run: |
+          sha256sum YimMenu-dev-*.dll > sha256.checksum
+          echo "build_sha=$(cat sha256.checksum)" >> $GITHUB_OUTPUT
+          cat sha256.checksum
+
+      - name: Remove previous build
+        uses: dev-drprasad/delete-tag-and-release@v1.0
+        with:
+          delete_release: true
+          tag_name: 1.61
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Dev Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Dev Build ${{ needs.check_date.outputs.var_build_num }} [${{ needs.build_dev.outputs.short_sha }}]
+          tag_name: 1.61
+          body: |
+            **This release has been built by Github Actions**
+            [Link to build](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+            Build SHA256:
+            ```
+            ${{ steps.build_sha.outputs.build_sha }}
+            ```
+            To verify the build SHA256 during the action, click the build link, go-to "Create Release", open the Echo build sha256 step and read the sha256.
+
+            Compare this build hash with one that you generated yourself from the build artifacts.
+            Alternatively you can download the build artifacts, generate a SHA256 checksum and compare it with the below binary.
+            Build artifacts ARE NOT automatically the same as release assets since release assets can be modified afterwards.
+
+            These are dev build of BigBaseV2 / YimMenu, they are provided for testing purposes only:
+            - Test if your build environment produces a broken BigBaseV2.dll
+            - Test if source code is out of date and no longer compatible with the current version of GTA V
+
+            If you wish to use this menu as-is you are on your own, no warranty is provided.
+
+            Full Commit Hash:
+            ```
+            ${{ needs.build_dev.outputs.full_sha }}
+            ```
+          files: |
+            YimMenu-dev-${{github.sha}}.dll
