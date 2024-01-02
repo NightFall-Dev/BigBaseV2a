@@ -2,6 +2,10 @@
 A mod menu base for Grand Theft Auto V.
 Strictly for educational purposes only.
 
+YimMenu is originally based of off [BigBaseV2](https://github.com/Pocakking/BigBaseV2) which was an amazing base at the time but nowadays is a bit dated.
+Menu focusing on protecting the user from toxic modders.
+## Game version support
+- Build 2699 1.61
 ## Table of contents
 
  * [How to build](#how-to-build)
@@ -13,7 +17,7 @@ Strictly for educational purposes only.
  * [Features](#features)
  * [Contributing](#contributing)
 
-## How to build
+## How to build/compile YimMenu
 
 Requirements:
 
@@ -37,12 +41,21 @@ Premake5 is used to generate our project files, if you haven't used it before we
 
 ### Visual studio 2022
 
-Install visual studio so you can compile the source
+Download and install visual studio
 
 [Download Link](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community&channel=Release&version=VS2022&source=VSLandingPage&cid=2030&passive=false)
 
+[Download the Visual Studio bootstrapper](https://aka.ms/vs/17/release/vs_community.exe)
+<hr>
+
 ### Cloning and generating project files
 
+Click the below link to make your own fork of YimMenu:
+
+[YimMenu main](https://github.com/YimMenu/YimMenu/fork)
+
+[~~YimMenu-outdated~~](https://github.com/NightFall-Dev/BigBaseV2a/fork)
+<hr>
 Clone the repository including submodules:
 ```bash
 git clone https://github.com/YimMenu/YimMenu.git --recursive || echo "You don't have git installed, install it from https://git-scm.com/download/win"
